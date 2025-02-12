@@ -1,18 +1,23 @@
-# Use an official Python runtime as a parent image
 FROM python:3.12-slim
 
-# Set the working directory in the container
+# Install Nginx and Supervisor
+RUN apt-get update && apt-get install -y nginx supervisor && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
-# Copy the dependency file and install dependencies
+# Install Python dependencies
 COPY requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Copy the entire project into the container
+# Copy project files
 COPY . .
 
-# Expose the port that the FastAPI app will run on
-EXPOSE 8000
+# Copy Nginx configuration file into place
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Run the FastAPI application with uvicorn
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Copy Supervisor configuration file
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+EXPOSE 80
+
+CMD ["supervisord", "-n"]
